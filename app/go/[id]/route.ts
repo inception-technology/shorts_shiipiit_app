@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { videos } from "@/lib/data";
+import { ITEMS } from "@/lib/data";
 
 // Redirection tracée : compte le clic sortant côté serveur (indépendant des
 // bloqueurs de scripts), puis renvoie 302 vers la fiche produit de ta boutique.
@@ -9,14 +9,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const item = videos.find((v) => v.id === id);
+  const item = ITEMS.find((v) => v.id === id);
 
   // eslint-disable-next-line no-console
   console.log(
     "[outbound_click]",
     JSON.stringify({
       id,
-      segment: item?.segment ?? null,
+      segment: item?.seg ?? null,
       cta: item?.cta ?? null,
       at: new Date().toISOString(),
     })
