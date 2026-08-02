@@ -1,4 +1,4 @@
-# short.shiipiit — landing de test (Next.js)
+# shorts.shiipiit — landing de test (Next.js)
 
 Mini-vitrine pour **mesurer le CTR sortant** avant de développer le MVP (voir
 `docs/VALIDATION.md`). Réutilisable comme base du produit : la grille masonry et

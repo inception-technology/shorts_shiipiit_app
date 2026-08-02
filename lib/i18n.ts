@@ -1,4 +1,4 @@
-// short.shiipiit — internationalisation (fr / en / zh)
+// shorts.shiipiit — internationalisation (fr / en / zh)
 // Dictionnaires de segments, filtres et chaînes d'interface, plus le helper `tr`.
 
 export type Locale = "fr" | "en" | "zh";
@@ -35,7 +35,7 @@ export const FILTERS: { id: string; label: I18n }[] = [
 ];
 
 export const T: Record<string, I18n> = {
-  brand: { fr: "short.shiipiit", en: "short.shiipiit", zh: "short.shiipiit" },
+  brand: { fr: "shorts.shiipiit", en: "shorts.shiipiit", zh: "shorts.shiipiit" },
   search: { fr: "Rechercher une vidéo, une boutique…", en: "Search a video, a shop…", zh: "搜索视频或店铺…" },
   searchShort: { fr: "Rechercher", en: "Search", zh: "搜索" },
   discover: { fr: "Découvrir", en: "Discover", zh: "发现" },

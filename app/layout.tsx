@@ -3,7 +3,7 @@ import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "short.shiipiit — Découverte produit en vidéo courte",
+  title: "shorts.shiipiit — Découverte produit en vidéo courte",
   description: "Grille masonry de vidéos courtes et lecteur vertical immersif. Test de format : mesure du CTR sortant par segment et par CTA.",
 };
 

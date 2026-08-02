@@ -1,6 +1,6 @@
 "use client";
 
-// short.shiipiit — composants du design system portés en React/TS.
+// shorts.shiipiit — composants du design system portés en React/TS.
 // Rendu fidèle au bundle shiipiit (_ds_bundle.js) : mêmes variantes, tailles et tokens.
 
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from "react";

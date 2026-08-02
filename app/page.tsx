@@ -1,6 +1,6 @@
 "use client";
 
-// short.shiipiit — écran produit. Grille masonry de vidéos courtes → lecteur
+// shorts.shiipiit — écran produit. Grille masonry de vidéos courtes → lecteur
 // vertical immersif. Objectif du test : mesurer le CTR sortant par segment et
 // par type de CTA (voir README / VALIDATION). Le suivi passe par lib/analytics
 // et la route serveur /go/[id].

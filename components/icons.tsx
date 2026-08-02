@@ -1,4 +1,4 @@
-// short.shiipiit — jeu d'icônes (tracé Lucide-like, 1.75 px).
+// shorts.shiipiit — jeu d'icônes (tracé Lucide-like, 1.75 px).
 // Aucune icône n'existe dans les sources shiipiit : substitution assumée.
 
 import type { CSSProperties } from "react";

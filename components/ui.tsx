@@ -1,6 +1,6 @@
 "use client";
 
-// short.shiipiit — contrôles d'interface partagés.
+// shorts.shiipiit — contrôles d'interface partagés.
 
 import { useState } from "react";
 import { Button, Chip } from "@/components/ds";
@@ -18,7 +18,7 @@ import {
 
 export function Wordmark({ size = 17, color = "var(--text-strong)" }: { size?: number; color?: string }) {
   return (
-    <span style={{ font: `800 ${size}px/1 var(--font-sans)`, letterSpacing: "-.03em", color }}>short.shiipiit</span>
+    <span style={{ font: `800 ${size}px/1 var(--font-sans)`, letterSpacing: "-.03em", color }}>shorts.shiipiit</span>
   );
 }
 

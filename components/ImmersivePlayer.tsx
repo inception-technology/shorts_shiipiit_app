@@ -1,6 +1,6 @@
 "use client";
 
-// short.shiipiit — lecteur vertical immersif (scroll-snap, autoplay muet, CTA).
+// shorts.shiipiit — lecteur vertical immersif (scroll-snap, autoplay muet, CTA).
 // Fidèle au prototype, avec lecture vidéo réelle et suivi du clic sortant (/go/[id]).
 
 import { useCallback, useEffect, useRef, useState } from "react";

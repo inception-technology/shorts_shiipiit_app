@@ -1,4 +1,4 @@
-// short.shiipiit — contenu de démonstration.
+// shorts.shiipiit — contenu de démonstration.
 //
 // Le modèle porte à la fois le contenu éditorial (titres/sous-titres i18n, boutique,
 // tags, segment) ET les champs qui font tourner la mesure de CTR sortant :
@@ -6,7 +6,7 @@
 //   - `cta` → 'buy' (« Voir le produit », corail) ou 'quote' (« Demander un devis », dégradé).
 // Remplace `poster`, `src` et `productUrl` par tes vraies vidéos verticales et tes
 // fiches produit. Les prix ne sont volontairement PAS gérés ici : ils vivent dans le
-// catalogue / la boutique. short.shiipiit ne fait que la découverte + le CTA.
+// catalogue / la boutique. shorts.shiipiit ne fait que la découverte + le CTA.
 
 import type { I18n, Segment } from "@/lib/i18n";
 

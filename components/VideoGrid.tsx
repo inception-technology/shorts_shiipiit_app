@@ -1,6 +1,6 @@
 "use client";
 
-// short.shiipiit — grille masonry de vignettes 9:16 + carte vidéo.
+// shorts.shiipiit — grille masonry de vignettes 9:16 + carte vidéo.
 
 import { useEffect, useRef, useState } from "react";
 import type { VideoItem } from "@/lib/data";
