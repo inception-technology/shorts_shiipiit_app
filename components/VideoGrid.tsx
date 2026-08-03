@@ -156,12 +156,19 @@ export function VideoCard({
   );
 }
 
-/** Nombre de colonnes déduit de la largeur mesurée (responsive sans détection de viewport). */
+/** Nombre de colonnes déduit de la largeur mesurée (responsive sans détection de viewport).
+ *  La grille occupant désormais toute la largeur de l'écran en desktop, les paliers
+ *  montent jusqu'à 8 colonnes : sans cela, une vignette ferait ~500 px de large sur
+ *  un écran 2560 px et la grille perdrait son effet de densité. La cible est une
+ *  vignette de ~190 à 260 px de large à tous les paliers. */
 function colsFor(width: number): number {
   if (width < 520) return 2;
   if (width < 760) return 3;
   if (width < 1000) return 4;
-  return 5;
+  // Au-delà, on ne fige plus de paliers : on vise une vignette d'environ 240 px
+  // de large, plafonnée à 10 colonnes (au-delà, les vignettes deviennent
+  // trop petites pour lire le titre et la boutique).
+  return Math.min(10, Math.max(5, Math.round(width / 240)));
 }
 
 export default function MasonryGrid({
@@ -225,9 +232,29 @@ export default function MasonryGrid({
   );
 }
 
-export function SkeletonGrid({ cols, count = 8 }: { cols: number; count?: number }) {
+/** Squelette de chargement. `cols` omis = même calcul de colonnes que la grille
+ *  réelle, pour que le passage squelette → contenu ne fasse pas sauter la mise en page. */
+export function SkeletonGrid({ cols, count = 8 }: { cols?: number; count?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [autoCols, setAutoCols] = useState(cols ?? 2);
+  const nCols = cols ?? autoCols;
+
+  useEffect(() => {
+    if (cols) return;
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => {
+      const w = el.clientWidth;
+      if (w) setAutoCols(colsFor(w));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [cols]);
+
   return (
-    <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols},minmax(0,1fr))`, gap: "var(--space-3)" }}>
+    <div ref={ref} style={{ display: "grid", gridTemplateColumns: `repeat(${nCols},minmax(0,1fr))`, gap: "var(--space-3)" }}>
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
@@ -235,7 +262,7 @@ export function SkeletonGrid({ cols, count = 8 }: { cols: number; count?: number
           style={{
             aspectRatio: "9 / 16",
             borderRadius: "var(--radius-lg)",
-            gridColumn: "span " + (i === 0 && cols > 1 ? 2 : 1),
+            gridColumn: "span " + (i === 0 && nCols > 1 ? 2 : 1),
           }}
         />
       ))}

@@ -303,7 +303,7 @@ function DesktopApp({ lang, setLang, theme, setTheme, loading, seg, setSeg, onOp
   const open = (it: VideoItem, el: HTMLElement | null) => onOpen(it, el, feed.list);
 
   const body = () => {
-    if (loading) return <SkeletonGrid cols={5} count={10} />;
+    if (loading) return <SkeletonGrid count={12} />;
     if (feed.base.length === 0)
       return searching ? (
         <StateBlock
@@ -343,9 +343,11 @@ function DesktopApp({ lang, setLang, theme, setTheme, loading, seg, setSeg, onOp
       >
         <div
           style={{
-            maxWidth: "var(--container-max)",
-            margin: "0 auto",
-            padding: "14px 24px",
+            // Pleine largeur en desktop : la grille doit occuper tout l'écran,
+            // l'en-tête s'aligne dessus (sinon la marge de l'en-tête et le bord
+            // de la grille ne coïncident plus). Marge latérale fluide.
+            width: "100%",
+            padding: "14px var(--shell-gutter)",
             display: "flex",
             alignItems: "center",
             gap: "var(--space-6)",
@@ -359,15 +361,14 @@ function DesktopApp({ lang, setLang, theme, setTheme, loading, seg, setSeg, onOp
           <ThemeToggle theme={theme} setTheme={setTheme} />
           <LangSwitcher lang={lang} setLang={setLang} />
         </div>
-        <div style={{ maxWidth: "var(--container-max)", margin: "0 auto", padding: "0 24px 12px" }}>
+        <div style={{ width: "100%", padding: "0 var(--shell-gutter) 12px" }}>
           <SegmentTabs lang={lang} seg={seg} setSeg={setSeg} />
         </div>
       </header>
       <main
         style={{
-          maxWidth: "var(--container-max)",
-          margin: "0 auto",
-          padding: "var(--space-6) 24px var(--space-10)",
+          width: "100%",
+          padding: "var(--space-6) var(--shell-gutter) var(--space-10)",
           display: "flex",
           flexDirection: "column",
           gap: "var(--space-5)",

@@ -73,6 +73,9 @@
 
   --container-max: 1120px;
   --gutter: 24px;
+  /* Marge latérale de la coquille desktop pleine largeur : 24 px sur un petit
+     écran, jusqu'à 40 px sur très grand écran. */
+  --shell-gutter: clamp(16px, 2vw, 40px);
   --section-gap: var(--space-20);
 
   /* ---- effets ---- */

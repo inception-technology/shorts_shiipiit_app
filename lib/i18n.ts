@@ -69,4 +69,20 @@ export const T: Record<string, I18n> = {
   filtersLabel: { fr: "Filtres", en: "Filters", zh: "筛选" },
   videos: { fr: "vidéos", en: "videos", zh: "个视频" },
   theme: { fr: "Thème", en: "Theme", zh: "主题" },
+
+  // Page produit de repli (/p/[id]) — phase de test, tant que la boutique
+  // n'est pas ouverte.
+  soonTitle: { fr: "Fiche produit bientôt disponible", en: "Product page coming soon", zh: "商品页面即将上线" },
+  soonBody: {
+    fr: "La boutique n'est pas encore ouverte. Écris-nous et nous te prévenons dès que ce produit est en ligne.",
+    en: "The shop isn't open yet. Drop us a line and we'll let you know as soon as this product goes live.",
+    zh: "店铺尚未开放。给我们留言，商品上线后我们会第一时间通知你。",
+  },
+  soonContact: { fr: "Nous écrire", en: "Get in touch", zh: "联系我们" },
+  soonNote: {
+    fr: "Page temporaire : elle existe pour que le clic sortant reste mesurable pendant la phase de test.",
+    en: "Temporary page: it exists so the outbound click stays measurable during the test phase.",
+    zh: "临时页面：用于在测试阶段统计外链点击。",
+  },
+  backHome: { fr: "Retour aux vidéos", en: "Back to videos", zh: "返回视频" },
 };

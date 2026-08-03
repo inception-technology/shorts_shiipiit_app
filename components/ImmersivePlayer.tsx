@@ -8,7 +8,6 @@ import type { CSSProperties } from "react";
 import type { VideoItem } from "@/lib/data";
 import { T, tr, type Locale } from "@/lib/i18n";
 import { Ic, Icon } from "@/components/icons";
-import { track } from "@/lib/analytics";
 
 /** CTA sortant : ancre stylée comme un bouton du design system. */
 function CtaLink({ item, lang }: { item: VideoItem; lang: Locale }) {
@@ -17,9 +16,12 @@ function CtaLink({ item, lang }: { item: VideoItem; lang: Locale }) {
     ? { background: "var(--color-accent)", color: "var(--text-on-accent)", boxShadow: "var(--shadow-accent)" }
     : { background: "var(--gradient-brand)", color: "var(--text-on-brand)", boxShadow: "var(--shadow-brand)" };
   return (
+    // Le clic sortant n'est PLUS compté ici : /go/[id] le compte côté serveur,
+    // ce qui résiste aux bloqueurs de scripts. Émettre aussi l'événement
+    // navigateur doublerait le CTR sur la part non bloquée du trafic.
+    // La langue est transmise pour enrichir la mesure et pour la page de repli.
     <a
-      href={`/go/${item.id}`}
-      onClick={() => track("outbound_click", { id: item.id, segment: item.seg, cta: item.cta })}
+      href={`/go/${item.id}?lang=${lang}`}
       style={{
         display: "inline-flex",
         width: "100%",
