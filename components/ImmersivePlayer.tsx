@@ -8,6 +8,8 @@ import type { CSSProperties } from "react";
 import type { VideoItem } from "@/lib/data";
 import { T, tr, type Locale } from "@/lib/i18n";
 import { Ic, Icon } from "@/components/icons";
+import HlsVideo from "@/components/HlsVideo";
+import { captions, poster as posterUrl, sources } from "@/lib/video";
 
 /** CTA sortant : ancre stylée comme un bouton du design system. */
 function CtaLink({ item, lang }: { item: VideoItem; lang: Locale }) {
@@ -49,15 +51,34 @@ function Slide({
   item,
   lang,
   active,
+  proche,
+  muted,
   onToggleSound,
   desktop,
 }: {
   item: VideoItem;
   lang: Locale;
   active: boolean;
+  /**
+   * Diapositive voisine de la diapositive active. On ne monte le lecteur que
+   * là : `hls.js` commence à remplir sa mémoire tampon dès qu'il est attaché,
+   * indépendamment de `preload`. Instancier les quatorze lecteurs d'un coup
+   * ferait télécharger quatorze flux en parallèle — sur mobile, c'est la
+   * lecture de la vidéo regardée qui en pâtirait.
+   */
+  proche: boolean;
+  muted: boolean;
   onToggleSound: () => void;
   desktop: boolean;
 }) {
+  // Une seule source de vérité pour le média : `sources()` si la vidéo est
+  // hébergée chez le prestataire, sinon les champs de démonstration. Aucune URL
+  // n'est construite ici — c'est ce qui rend ADR-02 réversible.
+  const cdn = sources(item.videoId);
+  const media = cdn?.hls ?? item.src;
+  const affiche = posterUrl(item.videoId, item.poster);
+  const pistes = captions(item.videoId, item.captionLangs ?? []);
+
   return (
     <section
       style={{
@@ -72,20 +93,20 @@ function Slide({
       }}
     >
       <div style={{ position: "relative", height: "100%", aspectRatio: "9 / 16", maxWidth: "100%", overflow: "hidden" }}>
-        {item.src ? (
-          <video
-            data-slide-video
-            src={item.src}
-            poster={item.poster}
-            muted
-            loop
-            playsInline
+        {media && proche ? (
+          <HlsVideo
+            src={media}
+            poster={affiche}
+            actif={active}
+            muted={muted}
+            tracks={pistes.map((p) => ({ lang: p.lang, url: p.url, label: p.label }))}
+            langParDefaut={lang}
             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
           />
         ) : (
           <div style={{ position: "absolute", inset: 0, animation: active ? "shp-kb 14s ease-out both" : "none" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={item.poster} alt={tr(item.title, lang)} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            <img src={affiche} alt={tr(item.title, lang)} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
           </div>
         )}
 
@@ -195,17 +216,10 @@ export default function ImmersivePlayer({
     return () => clearInterval(id);
   }, [index]);
 
-  // Autoplay muet de la vidéo active ; pause + son coupé pour les autres.
-  useEffect(() => {
-    const root = ref.current;
-    if (!root) return;
-    const vids = Array.from(root.querySelectorAll<HTMLVideoElement>("video[data-slide-video]"));
-    vids.forEach((v, i) => {
-      v.muted = i === index ? muted : true;
-      if (i === index) v.play().catch(() => {});
-      else v.pause();
-    });
-  }, [index, muted]);
+  // La lecture et le son sont pilotés par chaque diapositive (`HlsVideo`), et
+  // non plus par une requête DOM depuis ici : seules les diapositives voisines
+  // montent un lecteur, donc l'indice d'un élément dans le document ne
+  // correspond plus à l'indice de la vidéo.
 
   const go = useCallback(
     (d: number) => {
@@ -414,7 +428,16 @@ export default function ImmersivePlayer({
         style={{ flex: 1, minHeight: 0, overflowY: "auto", scrollSnapType: "y mandatory", display: "flex", flexDirection: "column" }}
       >
         {items.map((it, i) => (
-          <Slide key={it.id + i} item={it} lang={lang} active={i === index} onToggleSound={toggle} desktop={desktop} />
+          <Slide
+            key={it.id + i}
+            item={it}
+            lang={lang}
+            active={i === index}
+            proche={Math.abs(i - index) <= 1}
+            muted={i === index ? muted : true}
+            onToggleSound={toggle}
+            desktop={desktop}
+          />
         ))}
       </div>
     </div>

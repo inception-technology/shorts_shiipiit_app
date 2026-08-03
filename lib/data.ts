@@ -8,7 +8,7 @@
 // fiches produit. Les prix ne sont volontairement PAS gérés ici : ils vivent dans le
 // catalogue / la boutique. shorts.shiipiit ne fait que la découverte + le CTA.
 
-import type { I18n, Segment } from "@/lib/i18n";
+import type { I18n, Locale, Segment } from "@/lib/i18n";
 
 export type { Segment } from "@/lib/i18n";
 export type Cta = "buy" | "quote";
@@ -27,7 +27,21 @@ export interface VideoItem {
   title: I18n;
   /** Sous-titre / accroche. */
   cap: I18n;
-  /** Poster vertical 9:16. */
+  /**
+   * Identifiant de la vidéo chez le prestataire (GUID Bunny Stream, ADR-02).
+   * Renseigné → la lecture HLS, le poster et l'aperçu animé sont dérivés par
+   * `lib/video.ts`. Absent → repli sur `poster` et `src` ci-dessous.
+   * C'est ce champ, et lui seul, qui fait basculer une fiche de la
+   * démonstration aux vraies vidéos.
+   */
+  videoId?: string;
+  /**
+   * Langues des pistes de sous-titres **effectivement déposées** sur le CDN.
+   * Ne jamais y déclarer une langue non déposée : le lecteur afficherait une
+   * option qui échoue en silence.
+   */
+  captionLangs?: Locale[];
+  /** Poster vertical 9:16 — repli quand `videoId` est absent. */
   poster: string;
   /** URL de la vidéo (mp4/HLS). Vide = seul le poster s'affiche. */
   src?: string;
@@ -46,7 +60,13 @@ export const ITEMS: VideoItem[] = [
   { id: "v01", seg: "electronics", cta: "buy", span: 2, tags: ["new", "demo"], shop: "Nordvolt",
     title: { fr: "SSD NVMe Gen5 — 14 000 Mo/s", en: "Gen5 NVMe SSD — 14,000 MB/s", zh: "Gen5 NVMe 固态硬盘 · 14,000 MB/s" },
     cap: { fr: "Transfert d’un projet 4K en huit secondes.", en: "A 4K project copied in eight seconds.", zh: "八秒完成一个 4K 项目的传输。" },
-    poster: poster("ssd-gen5"), src: demo, productUrl: shopUrl("ssd-nvme-gen5") },
+    // TEST 2026-08-03 — première vraie vidéo Bunny branchée sur la tuile héro.
+    // Le titre et l'accroche restent ceux de la démonstration : seul le média est
+    // réel. À déplacer sur la bonne fiche produit, ou à retirer, quand le
+    // catalogue arrivera. Pas de `captionLangs` : aucune piste .vtt n'est encore
+    // déposée, et en déclarer une produirait un 404 silencieux dans le lecteur.
+    poster: poster("ssd-gen5"), videoId: "9ba80a3e-08f5-4038-af79-0e954f341012",
+    src: demo, productUrl: shopUrl("ssd-nvme-gen5") },
   { id: "v02", seg: "furniture", cta: "quote", span: 1, tags: ["matiere"], shop: "Atelier Vernier",
     title: { fr: "Fauteuil Lign — chêne cintré", en: "Lign armchair — bent oak", zh: "Lign 扶手椅 · 弯曲橡木" },
     cap: { fr: "Le dossier est cintré à la vapeur en une pièce.", en: "The back is steam-bent in a single piece.", zh: "椅背由整块木材蒸汽弯曲成型。" },

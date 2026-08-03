@@ -1,139 +1,199 @@
-# shorts.shiipiit — landing de test (Next.js)
+# shorts.shiipiit — vitrine de découverte vidéo (Next.js)
 
 Vitrine de **découverte produit en vidéo courte** : grille masonry de vignettes
-9:16 → lecteur vertical immersif. Objectif immédiat : **mesurer le CTR sortant**
-(clic vers la fiche produit) avant de développer le MVP. La grille et le lecteur
-sont pensés comme les composants réutilisables du futur produit.
+9:16 → lecteur vertical immersif → clic sortant vers la fiche produit de la
+boutique. Les prix ne vivent **pas** ici : cette application fait la découverte
+et le CTA, la boutique fait la transaction.
 
-Portée du prototype de design (Claude Design) : seul le **produit** est repris —
-le harnais de revue (bascule device/thème/état, annotations) n'a pas été porté.
+Les mêmes vidéos sont publiées sur TikTok, Instagram Reels, YouTube Shorts,
+Facebook et Pinterest — ce sont ces plateformes qui apportent le trafic, cette
+vitrine en est la surface d'atterrissage.
 
 ## Démarrer
 
 ```bash
 npm install
-npm run dev
-# http://localhost:3000
+cp .env.example .env.local     # puis renseigner (voir « Configuration »)
+npm run dev                    # http://localhost:3000
 ```
 
 Build de production : `npm run build && npm start`.
 
+| Commande | Rôle |
+|---|---|
+| `npm run dev` | serveur de développement |
+| `npm run build` / `npm start` | build et service de production |
+| `npm run lint` | ESLint |
+| `npm run verif:bunny` | **vérifie la configuration vidéo de bout en bout** (voir plus bas) |
+
 ## Fonctionnalités
 
 - **Grille masonry responsive** — vignettes 9:16, tuiles « héro » sur 2 colonnes,
-  nombre de colonnes déduit de la largeur (2 → 5), aperçu muet au survol.
-- **Lecteur vertical immersif** — `scroll-snap` (une vidéo par écran), autoplay
-  muet + bascule du son, progression segmentée, sous-titres, navigation clavier
-  (`↑`/`↓`, `Échap`, `m`) et flèches sur desktop, lecture `<video>` réelle.
-- **Navigation** — 6 univers (Tout, Electronics, Furniture, Audio, Éclairage,
-  Bureau), filtres cumulables, recherche, défilement infini.
-- **Deux mises en page** — mobile (barre d'onglets basse Découvrir / Rechercher /
-  Univers) et desktop (recherche en en-tête + footer), choisies au point de
-  rupture 900 px.
-- **i18n FR / EN / 中文** avec sélecteur de langue.
-- **Thème clair / sombre** (design system shiipiit).
-- **États** — squelette de chargement, vide, aucun résultat.
+  nombre de colonnes déduit de la largeur mesurée (2 → 10), aperçu animé au
+  survol, chargé uniquement au survol.
+- **Lecteur vertical immersif** — `scroll-snap` (une vidéo par écran), lecture
+  **HLS adaptative**, autoplay muet + bascule du son, progression segmentée,
+  sous-titres, navigation clavier (`↑`/`↓`, `Échap`, `m`) et flèches sur desktop.
+- **Navigation** — 6 univers, filtres cumulables, recherche, défilement infini.
+- **Deux mises en page** — mobile (barre d'onglets basse) et desktop (recherche
+  en en-tête + footer), au point de rupture 900 px.
+- **i18n FR / EN / 中文**, thème clair / sombre, états de chargement et vides.
+- **Formulaire de rétractation** — route serveur `/api/retractation` (obligation
+  légale applicable depuis le 19 juin 2026, absente de Shopify).
 
-## Design system
+## Vidéo — Bunny Stream
 
-Les tokens shiipiit (couleurs, typographie, espacement, effets, thème sombre)
-vivent dans [`app/globals.css`](app/globals.css). Les composants du système
-(`Button`, `Chip`, `Badge`) sont portés en React typé dans
-[`components/ds.tsx`](components/ds.tsx). Le CTA corail (`buy`) et le CTA dégradé
-bleu-violet (`quote`) en sont issus.
+ADR-02 (`../docs/DECISION-VIDEO.md`) retient **Bunny Stream**. Deux modules,
+séparés volontairement :
 
-## Ce qui est mesuré (tracking)
+| Module | Rôle | Secrets |
+|---|---|---|
+| [`lib/video.ts`](lib/video.ts) | dérivation d'URL **pure**, isomorphe | aucun |
+| [`lib/video-admin.ts`](lib/video-admin.ts) | téléversement et métadonnées | **porte la clé d'API** |
 
-**Le serveur fait foi.** Le clic sortant est compté par la route `/go/[id]`
-([`app/go/[id]/route.ts`](app/go/%5Bid%5D/route.ts)) : elle enregistre le clic,
-puis redirige en 302 vers la fiche produit. Le comptage survit donc aux
-bloqueurs de scripts. Le navigateur n'émet **plus** `outbound_click` — le
-compter des deux côtés doublerait le CTR sur la part non bloquée du trafic.
+`lib/video-admin.ts` commence par `import "server-only"` : un composant client
+qui l'importerait **ferait échouer la compilation**. C'est une barrière, pas une
+convention.
+
+Aucun composant ne construit d'URL à la main. Changer de prestataire = réécrire
+`lib/video.ts`, pas l'application.
+
+### Lecture HLS et `hls.js`
+
+Bunny diffuse en HLS adaptatif. **Seul Safari lit le HLS nativement** : sur
+Chrome, Firefox et Edge, un `<video>` pointé sur un `.m3u8` reste **noir sans
+lever d'erreur**. [`components/HlsVideo.tsx`](components/HlsVideo.tsx) encapsule
+`hls.js`, en **import dynamique** — la bibliothèque (~130 ko compressés) n'est
+chargée qu'à l'ouverture du lecteur, jamais pour qui ne fait que parcourir la
+grille. Le repli natif est tenté en premier sur les navigateurs qui savent lire
+le HLS.
+
+⚠️ `hls.js` remplit sa mémoire tampon **dès qu'il est attaché**, indépendamment
+de `preload="none"`. Seules la diapositive active et ses voisines montent un
+lecteur : sinon quatorze flux se téléchargent en parallèle. C'est aussi pourquoi
+la lecture est pilotée par `HlsVideo` lui-même et non par le composant parent.
+
+### Vérifier la configuration
+
+```bash
+npm run verif:bunny
+```
+
+Le script authentifie la clé, liste l'état d'encodage des vidéos, **va chercher
+réellement chaque URL sur le CDN**, puis contrôle le master contre la spec
+d'ADR-02 (format, définition, débit réel, cadence, durée, nommage). Il distingue
+erreur réseau et refus d'accès, et explique chaque cas.
+
+Deux pièges qu'il diagnostique, tous deux au symptôme trompeur :
+
+- le tableau de bord Bunny affiche le **sous-domaine seul** de la pull zone ;
+  sans `.b-cdn.net` le nom ne résout pas ;
+- les domaines autorisés comparent le nom d'hôte **avec son port** :
+  `localhost` est refusé, `localhost:3000` accepté. Une image en 403 n'affiche
+  aucun message — la page semble simplement vide.
+
+## Configuration
+
+Copie `.env.example` en `.env.local`. `.env*.local` est ignoré par git : **ne
+jamais commiter de clé**.
+
+| Variable | Rôle |
+|---|---|
+| `NEXT_PUBLIC_VIDEO_CDN_HOST` | hôte de la pull zone, ex. `vz-xxxxxxx-xxx.b-cdn.net` |
+| `NEXT_PUBLIC_VIDEO_LIBRARY_ID` | identifiant de bibliothèque (public) |
+| `BUNNY_STREAM_API_KEY` | clé **de bibliothèque** — pas l'Account API Key |
+| `BUNNY_STREAM_LIBRARY_ID` | identifiant de bibliothèque (serveur) |
+| `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` / `PLAUSIBLE_DOMAIN` | mesure d'audience |
+| `PLAUSIBLE_SEGMENTED_EVENTS` | `1` si le plan Plausible n'a pas les propriétés |
+| `RETRACTATION_ALLOWED_ORIGIN` | origine autorisée pour le formulaire |
+| `RESEND_API_KEY` | accusé de réception de rétractation |
+
+⚠️ **Sans les variables vidéo, l'application retombe silencieusement sur les
+vignettes de démonstration** — sans erreur. C'est le mode de défaillance à
+connaître au moment de déployer.
+
+## Ce qui est mesuré
+
+**Le serveur fait foi.** Le clic sortant est compté par
+[`app/go/[id]/route.ts`](app/go/%5Bid%5D/route.ts) : elle enregistre le clic puis
+redirige en 302. Le comptage survit donc aux bloqueurs de scripts. Le navigateur
+n'émet **plus** `outbound_click` — le compter des deux côtés doublerait le CTR
+sur la part non bloquée du trafic.
 
 | Émis par | Événements |
 |---|---|
 | Navigateur ([`lib/analytics.ts`](lib/analytics.ts)) | `page_view`, `segment_switch`, `video_open`, `lang_switch` |
-| Serveur ([`lib/plausible-server.ts`](lib/plausible-server.ts)) | `outbound_click` (+ propriétés : `id`, `segment`, `cta`, `lang`, `shop`, `destination`) |
+| Serveur ([`lib/plausible-server.ts`](lib/plausible-server.ts)) | `outbound_click` (+ `id`, `segment`, `cta`, `lang`, `shop`, `destination`) |
 
-- **Sans configuration** : rien n'est mesuré en production. `PLAUSIBLE_DOMAIN`
-  absent ⇒ l'événement est seulement journalisé en avertissement.
-- **Avec Plausible** : copie `.env.example` en `.env.local` et renseigne
-  `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` **et** `PLAUSIBLE_DOMAIN`.
-- ⚠️ Sur Plausible Cloud, les propriétés personnalisées exigent le plan
-  Growth. Sans elles tu n'as qu'un CTR global. Mets alors
-  `PLAUSIBLE_SEGMENTED_EVENTS=1` : chaque clic émet aussi un événement nommé
-  `outbound_click_<univers>_<cta>`, lisible sur tous les plans.
+**Robots.** Les prévisualisations de lien préchargent les URL partagées :
+`/go/[id]` les redirige mais ne les compte pas ([`lib/bots.ts`](lib/bots.ts)). La
+redirection n'est jamais bloquée — un faux positif coûte une mesure, jamais un
+visiteur.
 
-**Robots.** Les prévisualisations de lien (WhatsApp, Slack, Discord…) et les
-crawlers préchargent les URL partagées. `/go/[id]` les redirige mais ne les
-compte pas ([`lib/bots.ts`](lib/bots.ts)). La redirection n'est jamais bloquée :
-un faux positif coûte une mesure, jamais un visiteur.
+**Cache.** La route est `force-dynamic` et répond `no-store` : une 302 mise en
+cache ne repasserait plus par le serveur.
 
-**Cache.** La route est `force-dynamic` et répond `no-store`. Une 302 mise en
-cache ne repasserait plus par le serveur : les clics suivants ne seraient pas
-comptés.
-
-**Destination.** Tant qu'un `productUrl` pointe encore vers le domaine de
-démonstration (`.example`, réservé par la RFC 2606, il ne résout jamais), le
-visiteur est redirigé vers la page interne
-[`/p/[id]`](app/p/%5Bid%5D/page.tsx) plutôt que vers une erreur DNS. Dès qu'une
-vraie URL est renseignée, ce repli cesse tout seul.
+**Destination.** Tant qu'un `productUrl` pointe vers le domaine de démonstration
+(`.example`, réservé par la RFC 2606, il ne résout jamais), le visiteur est
+redirigé vers [`/p/[id]`](app/p/%5Bid%5D/page.tsx) plutôt que vers une erreur
+DNS. Dès qu'une vraie URL est renseignée, ce repli cesse tout seul.
 
 ### Quels taux lire
 
-Le CTA n'existe que dans le lecteur immersif, pas sur les vignettes. Lis donc
-**deux** taux séparés, jamais un seul :
+Le CTA n'existe que dans le lecteur, pas sur les vignettes. Lis **deux** taux,
+jamais un seul :
 
 - **Taux d'ouverture** = `video_open ÷ page_view` — le format donne-t-il envie
-  d'ouvrir une vidéo ?
+  d'ouvrir ?
 - **Taux de clic** = `outbound_click ÷ video_open` — la vidéo donne-t-elle envie
-  d'aller au produit ? *C'est le signal des hypothèses H1 et H3.*
+  d'aller au produit ?
 
-À lire par univers et par type de CTA (`buy` vs `quote`, hypothèse H2). Voir
-`../docs/ROADMAP.md` (phase PV) et `../docs/VALIDATION.md` pour les seuils.
+À lire par univers et par type de CTA (`buy` vs `quote`).
 
 ## Brancher tes vraies données
 
-Le contenu de démo est dans [`lib/data.ts`](lib/data.ts) (tableau `ITEMS`). Par
-item :
+Le contenu de démo est dans [`lib/data.ts`](lib/data.ts) (tableau `ITEMS`).
 
-- `poster` → vignette verticale 9:16 (remplace les posters de démo picsum).
-- `src` → URL de la vidéo (mp4/HLS, embed Bunny/Cloudflare). Vide = poster seul.
-- `productUrl` → fiche produit de **ta boutique** (cible du CTA sortant).
-- `cta` → `"buy"` (achat direct, CTA corail) ou `"quote"` (devis, CTA dégradé).
-- `seg`, `tags`, `shop`, `title` / `cap` (i18n `{ fr, en, zh }`), `span` (1 ou 2).
+| Champ | Rôle |
+|---|---|
+| `videoId` | **GUID Bunny**. Renseigné → HLS, poster et aperçu dérivés automatiquement. C'est ce seul champ qui fait basculer une fiche de la démo au réel. |
+| `captionLangs` | langues des `.vtt` **effectivement déposés**. En déclarer un absent produit un 404 silencieux. |
+| `poster` | vignette de repli quand `videoId` est absent |
+| `src` | vidéo simple (mp4) — repli hérité de la démo |
+| `productUrl` | fiche produit de **ta boutique**, cible du CTA sortant |
+| `cta` | `"buy"` (corail) ou `"quote"` (dégradé) |
+| `seg`, `tags`, `shop`, `title`/`cap` (i18n), `span` | contenu éditorial |
 
-Les libellés d'univers, filtres et chaînes d'interface (multilingues) sont dans
+Les libellés d'univers, filtres et chaînes d'interface sont dans
 [`lib/i18n.ts`](lib/i18n.ts).
-
-### Tester achat direct vs devis
-
-Pour le mobilier haut de gamme, l'hypothèse « achat en ligne direct » est risquée.
-Certaines fiches sont déjà en `cta: "quote"` : compare le taux de clic des deux
-CTA pour décider du bon modèle sur ce segment (hypothèse H2, voir
-[ROADMAP.md](ROADMAP.md)).
 
 ## Structure
 
 ```
 app/
-  layout.tsx          # layout + préconnexions polices + Plausible optionnel
-  page.tsx            # coquille responsive : MobileApp / DesktopApp, feed, lecteur
-  globals.css         # tokens du design system + base + utilitaires
-  go/[id]/route.ts    # redirection tracée des clics sortants (source de vérité)
-  p/[id]/page.tsx     # fiche produit de repli tant que la boutique n'est pas ouverte
+  layout.tsx            # layout, préconnexions polices, Plausible optionnel
+  page.tsx              # coquille responsive, feed, lecteur
+  globals.css           # tokens du design system
+  go/[id]/route.ts      # redirection tracée des clics sortants (source de vérité)
+  p/[id]/page.tsx       # fiche de repli tant que la boutique n'est pas ouverte
+  api/retractation/     # formulaire de rétractation (obligation légale)
 components/
-  ds.tsx              # design system porté : Button / Chip / Badge
-  icons.tsx           # jeu d'icônes SVG
-  ui.tsx              # recherche, onglets, filtres, langue, thème, bottom nav, états
-  VideoGrid.tsx       # grille masonry 9:16 + carte vidéo + skeleton
-  ImmersivePlayer.tsx # lecteur vertical (scroll-snap, son, sous-titres, CTA)
+  ds.tsx                # design system : Button / Chip / Badge
+  icons.tsx             # icônes SVG
+  ui.tsx                # recherche, onglets, filtres, langue, thème, états
+  VideoGrid.tsx         # grille masonry 9:16 + carte + squelette
+  ImmersivePlayer.tsx   # lecteur vertical (scroll-snap, son, sous-titres, CTA)
+  HlsVideo.tsx          # <video> capable de lire du HLS (hls.js à la demande)
 lib/
-  data.ts             # contenu de démo (ITEMS) — à remplacer
-  i18n.ts             # dictionnaires FR/EN/中文, univers, filtres, helper tr()
-  analytics.ts        # wrapper de tracking navigateur
-  plausible-server.ts # envoi d'événements Plausible côté serveur
-  bots.ts             # détection des robots et prévisualisations de lien
+  data.ts               # contenu de démo (ITEMS) — à remplacer
+  i18n.ts               # dictionnaires FR/EN/中文, univers, filtres, tr()
+  video.ts              # URL vidéo — public, sans secret
+  video-admin.ts        # téléversement Bunny — server-only, porte la clé
+  analytics.ts          # tracking navigateur
+  plausible-server.ts   # événements Plausible côté serveur
+  bots.ts               # robots et prévisualisations de lien
+scripts/
+  verifier-bunny.mjs    # vérification de la configuration vidéo
 ```
 
 ## Déploiement
@@ -142,13 +202,18 @@ Hébergé sur **Vercel** (équipe `inceptiontech`, projet `shorts-shiipiit-app`)
 Chaque push sur `main` de `inception-technology/shorts_shiipiit_app` déclenche un
 déploiement de production.
 
-- **Production (publique)** : https://shorts-shiipiit-app.vercel.app
-- Les URLs de preview / déploiement (alias de branche, hash) sont protégées par
-  Vercel Authentication (SSO équipe). Le domaine de production, lui, est ouvert.
+À faire avant que la vidéo fonctionne en ligne :
 
-> Pour un test de CTR sur visiteurs anonymes, garde le domaine de production
-> public (Vercel *Standard Protection* le laisse ouvert par défaut).
+1. renseigner les variables `NEXT_PUBLIC_VIDEO_*` **sur Vercel** ;
+2. ajouter le domaine de production aux **domaines autorisés Bunny** ;
+3. raccorder `shorts.shiipiit.com` au projet.
+
+Les URL de prévisualisation changent à chaque push et ne peuvent pas être
+listées à l'avance chez Bunny — la vidéo n'y fonctionnera pas sans ajout
+ponctuel.
 
 ## Roadmap
 
-Étapes de validation puis chemin vers le MVP : voir [ROADMAP.md](ROADMAP.md).
+La roadmap fait foi dans **`../docs/ROADMAP.md`**, avec sa vue rendue
+`../docs/roadmap.html`. Le [`ROADMAP.md`](ROADMAP.md) de ce dépôt n'est qu'un
+renvoi : deux roadmaps concurrentes divergent toujours.

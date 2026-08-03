@@ -6,12 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "verif:bunny": "node scripts/verifier-bunny.mjs"
   },
   "dependencies": {
+    "hls.js": "^1.6.16",
     "next": "^16.2.12",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@types/node": "20.14.10",

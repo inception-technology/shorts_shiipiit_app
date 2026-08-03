@@ -6,9 +6,28 @@ import { useEffect, useRef, useState } from "react";
 import type { VideoItem } from "@/lib/data";
 import { tr, type Locale } from "@/lib/i18n";
 import { Ic, Icon } from "@/components/icons";
+import { poster as posterUrl, sources } from "@/lib/video";
 
-/** Média 9:16 avec léger zoom au survol (aperçu muet). */
+/**
+ * Média 9:16 avec léger zoom au survol.
+ *
+ * L'URL n'est jamais construite ici : `poster()` décide seule entre l'image du
+ * CDN et le repli fourni dans les données (ADR-02). Tant que la vidéo n'a pas
+ * de `videoId`, la vignette de démonstration continue de s'afficher — la
+ * bascule vers les vraies vidéos se fait donnée par donnée, sans branche de code.
+ */
 function Poster({ item, preview }: { item: VideoItem; preview: boolean }) {
+  // L'aperçu animé n'est demandé qu'au survol : le charger d'emblée sur toute
+  // la grille multiplierait la bande passante par le nombre de vignettes
+  // visibles, pour un média que l'immense majorité des visiteurs ne verra pas.
+  const [apercuDemande, setApercuDemande] = useState(false);
+  useEffect(() => {
+    if (preview) setApercuDemande(true);
+  }, [preview]);
+
+  const src = posterUrl(item.videoId, item.poster);
+  const apercu = apercuDemande ? sources(item.videoId)?.preview : undefined;
+
   return (
     <div style={{ position: "absolute", inset: 0, overflow: "hidden", background: "var(--surface-sunken)" }}>
       <div
@@ -21,11 +40,31 @@ function Poster({ item, preview }: { item: VideoItem; preview: boolean }) {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={item.poster}
+          src={src}
           alt={tr(item.title, "fr")}
           loading="lazy"
           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
         />
+        {apercu && (
+          // Superposé plutôt que substitué : si l'aperçu tarde ou échoue, la
+          // vignette reste visible dessous au lieu de laisser un trou.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={apercu}
+            alt=""
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+              opacity: preview ? 1 : 0,
+              transition: "opacity 220ms ease-out",
+            }}
+          />
+        )}
       </div>
     </div>
   );
