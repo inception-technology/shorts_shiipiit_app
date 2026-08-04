@@ -1,0 +1,27 @@
+# shorts.shiipiit — normalisation des fins de ligne.
+#
+# Le dépôt est édité depuis Windows (CRLF) et depuis des outils qui écrivent en
+# LF. Sans cette règle, un simple aller-retour fait apparaître un fichier entier
+# comme modifié alors que rien n'a changé — ce qui noie les vraies
+# modifications dans le bruit et rend les revues illisibles.
+#
+# `text=auto eol=lf` : git normalise en LF dans l'historique, et restitue selon
+# la configuration locale à la extraction. Une seule renormalisation est
+# nécessaire, au moment où ce fichier est introduit.
+
+* text=auto eol=lf
+
+# Fichiers binaires : ne jamais toucher au contenu.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.mp4 binary
+*.mov binary
+*.webm binary
+*.woff binary
+*.woff2 binary
+*.tgz binary
+*.zip binary

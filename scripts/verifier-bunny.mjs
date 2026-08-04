@@ -52,6 +52,23 @@ const V = "✓";
 const X = "✗";
 const T = "!";
 
+// Tarifs Bunny affiches publiquement (« a partir de »), en dollars.
+// Les regions hors Europe/Amerique du Nord coutent davantage : ces montants sont
+// donc un PLANCHER. A remplacer par la facture reelle des que le trafic existe.
+const TARIF_STOCKAGE_GO = 0.01; // $/Go/mois
+const TARIF_DIFFUSION_GO = 0.005; // $/Go diffuse
+
+/**
+ * Volume diffuse pour une vue complete, en Mo.
+ * Hypothese : le lecteur adaptatif se stabilise autour de 2,5 Mbit/s (720p), ce
+ * qui est le palier courant sur mobile pour une video verticale. `[Hypothese]` —
+ * a remplacer par la mesure reelle des statistiques Bunny.
+ */
+function estimerMoParVue(dureeSec) {
+  const MBIT_PAR_SEC = 2.5;
+  return (dureeSec * MBIT_PAR_SEC) / 8;
+}
+
 let echecs = 0;
 const dire = (etat, texte) => {
   if (etat === X) echecs++;
@@ -308,29 +325,26 @@ async function main() {
       );
   }
 
-  // Regle ADR-02 arretee le 2026-08-03 : 30-60 s par defaut, 65-75 s si le sujet
-  // deborde, et surtout **rien entre 60 et 64 s**. Le seul seuil de duree qui
-  // existe reellement sur les plateformes est celui du Creator Rewards de TikTok
-  // (1 minute) : 59 s le manque d'une seconde, 62 s le franchit sans rien
-  // raconter de plus. Voir MONETISATION-VIDEO.md.
+  // Regle ADR-02, assouplie le 2026-08-03 : objectif 30-65 s, bornes d'alerte a
+  // 15 s et 90 s. Entre les deux, c'est hors objectif mais acceptable — le sujet
+  // commande. Voir MONETISATION-VIDEO.md pour le seuil de monetisation TikTok
+  // (1 minute), qui reste hors d'atteinte au volume actuel.
   if (!d) dire(T, "duree inconnue");
-  else if (d >= 30 && d <= 60) dire(V, `duree ${d}s — dans la cible 30-60s`);
-  else if (d >= 65 && d <= 75) dire(V, `duree ${d}s — format long assume (65-75s)`);
-  else if (d < 30)
-    dire(T, `duree ${d}s — sous la cible 30-60s. Acceptable si c'est delibere.`);
-  else if (d > 60 && d < 65)
+  else if (d >= 30 && d <= 65) dire(V, `duree ${d}s — dans l'objectif 30-65s`);
+  else if (d < 15)
     dire(
       T,
-      `duree ${d}s — dans la zone morte 60-64s. Soit redescendre sous 60s, soit ` +
-        "monter a 65s : c'est la borne du Creator Rewards TikTok (1 min)."
+      `duree ${d}s — sous la borne de 15s. Trop court pour montrer un produit : ` +
+        "la vidéo sera vue mais ne dira rien."
     );
-  else
+  else if (d > 90)
     dire(
       T,
-      `duree ${d}s — au-dela de 75s. Rien ne l'interdit (YouTube va jusqu'a 3 min), ` +
-        "mais la complétion chute, donc la diffusion, donc le trafic boutique — et la " +
-        "bande passante suit (R-01)."
+      `duree ${d}s — au-dela de la borne de 90s. Rien ne l'interdit (YouTube va ` +
+        "jusqu'a 3 min), mais la complétion chute, donc la diffusion, donc le trafic " +
+        "boutique — et la bande passante double tous les 30s (R-01)."
     );
+  else dire(V, `duree ${d}s — hors objectif 30-65s mais dans les bornes acceptables`);
 
   // --- 4bis. diagnostic d'origine du fichier ------------------------------
   //
@@ -356,20 +370,35 @@ async function main() {
       else dire(T, `images par seconde : ${fps} — attendu 30 constant (ADR-02)`);
     }
     if (poids && d) {
+      // ⚠️ `storageSize` est le poids TOTAL stocke par Bunny pour cette video :
+      // l'original ET tous les rendus. Ce n'est donc PAS le debit du master, et
+      // en deduire un Mbit/s source serait faux. On s'en sert pour deux choses
+      // legitimes : le cout de stockage, et un plancher de qualite (un total
+      // tres bas ne peut pas contenir un master 1080p correct).
       const mo = poids / 1024 / 1024;
-      const mbps = (poids * 8) / d / 1_000_000;
-      const txt = `poids stocke ${mo.toFixed(1)} Mo — soit ~${mbps.toFixed(1)} Mbit/s sur ${d}s`;
-      // Un master conforme vise 6-10 Mbit/s. Sous 2, le fichier a ete recompresse
-      // avant de nous parvenir : Bunny ne peut pas restituer ce qui a ete jete.
-      if (mbps < 2) {
-        dire(T, `${txt} — tres en dessous des 6-10 Mbit/s d'un master`);
+      const go = poids / 1024 ** 3;
+      // Le stockage est structurellement negligeable : on l'exprime pour 100
+      // videos, sinon le chiffre est illisible et n'apprend rien.
+      const cent = go * 100 * TARIF_STOCKAGE_GO;
+      dire(V, `poids stocke ${mo.toFixed(1)} Mo (original + rendus) — ~${cent.toFixed(2)} $/mois pour 100 videos de ce poids`);
+      // Ordre de grandeur : un master 1080p de 30 s pese au moins ~20 Mo, et les
+      // rendus autant. Sous ~1 Mo par seconde de video, la source etait deja
+      // compressee avant de nous parvenir.
+      if (mo / d < 1) {
+        dire(T, `soit ${(mo / d).toFixed(2)} Mo par seconde — trop peu pour un master 1080p`);
         note("La perte est ANTERIEURE au televersement : le fichier recu etait deja");
         note("compresse. Bunny ne peut pas restituer des pixels absents de la source.");
-        note("Pistes, par ordre de probabilite : fichier recupere depuis une plateforme");
-        note("sociale (Douyin, TikTok, WeChat) au lieu de l'export d'origine ; export");
-        note("en preset « web/partage » plutot qu'en qualite master ; capture d'ecran.");
-      } else if (mbps > 12) dire(T, `${txt} — au-dessus de la cible, master surdimensionne`);
-      else dire(V, txt);
+        note("Pistes : transit par une messagerie (WeChat recompresse au-dela de 25 Mo),");
+        note("fichier recupere depuis une plateforme sociale, ou export en preset « web ».");
+      }
+      // Cout de diffusion : c'est lui qui porte le risque R-01, pas le stockage.
+      const moParVue = estimerMoParVue(d);
+      const mille = (moParVue * 1000) / 1024 * TARIF_DIFFUSION_GO;
+      dire(
+        V,
+        `diffusion estimee ~${moParVue.toFixed(0)} Mo par vue complete — ` +
+          `~${mille.toFixed(2)} $ pour 1 000 vues completes`
+      );
     }
     if (rotation) dire(T, `rotation declaree : ${rotation}° — verifier l'orientation reelle`);
   }

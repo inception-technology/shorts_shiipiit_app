@@ -9,3 +9,4 @@ tsconfig.tsbuildinfo
 next-env.d.ts
 _to_delete/
 _src-snapshot.tgz
+commit-shorts.ps1

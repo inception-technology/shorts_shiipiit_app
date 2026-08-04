@@ -107,10 +107,38 @@ jamais commiter de clé**.
 | `PLAUSIBLE_SEGMENTED_EVENTS` | `1` si le plan Plausible n'a pas les propriétés |
 | `RETRACTATION_ALLOWED_ORIGIN` | origine autorisée pour le formulaire |
 | `RESEND_API_KEY` | accusé de réception de rétractation |
+| `NEXT_PUBLIC_SITE_URL` | URL publique, requise pour les métadonnées de partage |
 
 ⚠️ **Sans les variables vidéo, l'application retombe silencieusement sur les
 vignettes de démonstration** — sans erreur. C'est le mode de défaillance à
 connaître au moment de déployer.
+
+## Partage social et référencement
+
+Les réseaux sociaux sont le moteur de trafic : les mêmes vidéos y sont publiées,
+et c'est de là que viennent les visiteurs. Deux conséquences dans le code.
+
+**Lien profond `/v/[id]`.** Sans lui, tout partage ramène sur la grille et le
+visiteur doit retrouver lui-même la vidéo qui l'a fait cliquer — c'est là que se
+perd l'essentiel du trafic social. `/v/<id>` ouvre directement la bonne vidéo.
+La route est prérendue statiquement (`generateStaticParams`), un identifiant
+inconnu renvoie 404 plutôt qu'une page vide. L'URL suit aussi le lecteur :
+ouvrir une vidéo depuis la grille met à jour la barre d'adresse
+(`replaceState`, pour que « retour » ne remonte pas le fil des vidéos vues).
+
+**Métadonnées Open Graph par vidéo** — titre, description, poster Bunny et flux
+HLS. ⚠️ `metadataBase` est indispensable : sans elle Next.js émet des URL
+relatives, que les réseaux sociaux **ignorent en silence**. L'aperçu partagé
+apparaît sans image, et rien ne le signale. C'est le rôle de
+[`lib/site.ts`](lib/site.ts) et de `NEXT_PUBLIC_SITE_URL`.
+
+Le poster est vertical (9:16) et les plateformes recadrent au centre — d'où les
+zones de sécurité imposées au tournage (10 % en haut, 20 % en bas).
+
+`app/robots.ts` et `app/sitemap.ts` complètent l'ensemble : les pages `/v/[id]`
+sont indexables, `/go/`, `/p/` et `/api/` sont exclues — ce sont respectivement
+une redirection de mesure, une fiche de repli sans contenu propre, et des routes
+techniques.
 
 ## Ce qui est mesuré
 
@@ -174,10 +202,14 @@ app/
   layout.tsx            # layout, préconnexions polices, Plausible optionnel
   page.tsx              # coquille responsive, feed, lecteur
   globals.css           # tokens du design system
+  v/[id]/page.tsx       # lien profond vers une vidéo + métadonnées Open Graph
   go/[id]/route.ts      # redirection tracée des clics sortants (source de vérité)
   p/[id]/page.tsx       # fiche de repli tant que la boutique n'est pas ouverte
   api/retractation/     # formulaire de rétractation (obligation légale)
+  robots.ts             # règles d'indexation
+  sitemap.ts            # une entrée par vidéo
 components/
+  AppShell.tsx          # coquille applicative, partagée par / et /v/[id]
   ds.tsx                # design system : Button / Chip / Badge
   icons.tsx             # icônes SVG
   ui.tsx                # recherche, onglets, filtres, langue, thème, états
@@ -186,6 +218,7 @@ components/
   HlsVideo.tsx          # <video> capable de lire du HLS (hls.js à la demande)
 lib/
   data.ts               # contenu de démo (ITEMS) — à remplacer
+  site.ts               # URL publique du site (métadonnées absolues)
   i18n.ts               # dictionnaires FR/EN/中文, univers, filtres, tr()
   video.ts              # URL vidéo — public, sans secret
   video-admin.ts        # téléversement Bunny — server-only, porte la clé
@@ -204,7 +237,8 @@ déploiement de production.
 
 À faire avant que la vidéo fonctionne en ligne :
 
-1. renseigner les variables `NEXT_PUBLIC_VIDEO_*` **sur Vercel** ;
+1. renseigner les variables `NEXT_PUBLIC_VIDEO_*` et `NEXT_PUBLIC_SITE_URL`
+   **sur Vercel** ;
 2. ajouter le domaine de production aux **domaines autorisés Bunny** ;
 3. raccorder `shorts.shiipiit.com` au projet.
 
