@@ -35,7 +35,14 @@ Build de production : `npm run build && npm start`.
 - **Lecteur vertical immersif** — `scroll-snap` (une vidéo par écran), lecture
   **HLS adaptative**, autoplay muet + bascule du son, progression segmentée,
   sous-titres, navigation clavier (`↑`/`↓`, `Échap`, `m`) et flèches sur desktop.
-- **Navigation** — 6 univers, filtres cumulables, recherche, défilement infini.
+- **Section « à la une »** — carrousel horizontal de 10 cartes maximum
+  (3 en desktop, 2 en tablette, 1 en mobile) pour les contenus mis en avant et
+  les messages promotionnels. Voir [`lib/hero.ts`](lib/hero.ts).
+- **Navigation** — 6 univers, filtres cumulables, recherche, défilement infini ;
+  menu secondaire vers *À propos & Contact* et *Actualités*, replié en burger
+  sous 1024 px.
+- **Pages éditoriales** — `/about` (qui parle, et pourquoi) et `/news` (blog :
+  nouveautés, coulisses du sourcing, conseils d'expatriation en Chine).
 - **Deux mises en page** — mobile (barre d'onglets basse) et desktop (recherche
   en en-tête + footer), au point de rupture 900 px.
 - **i18n FR / EN / 中文**, thème clair / sombre, états de chargement et vides.
@@ -141,6 +148,34 @@ sont indexables, `/go/`, `/p/` et `/api/` sont exclues — ce sont respectivemen
 une redirection de mesure, une fiche de repli sans contenu propre, et des routes
 techniques.
 
+## Section « à la une » et pages éditoriales
+
+**Le carrousel** ([`components/HeroCarousel.tsx`](components/HeroCarousel.tsx))
+défile nativement — `overflow-x: auto` + `scroll-snap` — plutôt que par
+translation calculée : on hérite du geste tactile, de l'inertie et du clavier,
+que réimplémenter coûte beaucoup de code pour un résultat inférieur. Le nombre
+de cartes vient de la **largeur mesurée**, comme la grille, et non de requêtes
+média : le composant sert dans les deux coquilles, où le viewport ne dit pas la
+même chose que le conteneur.
+
+⚠️ **Une seule vidéo lit à la fois**, celle qui est en tête de piste. Trois flux
+simultanés sur la page la plus vue du site, pour des vidéos que le visiteur ne
+regarde pas, c'est exactement le risque R-01.
+
+Le plafond de **dix cartes** est appliqué dans `lib/hero.ts`, pas laissé à la
+vigilance de l'appelant. Au-delà, les dernières ne sont jamais vues et donnent
+la fausse impression d'avoir communiqué.
+
+**Le menu** ([`components/NavMenu.tsx`](components/NavMenu.tsx)) bascule en
+burger sous **1024 px**, et non au point de rupture de l'application (900 px) :
+une tablette de 1000 px utilise la coquille desktop mais n'a pas la place
+d'afficher deux libellés à côté de la recherche, du thème et de la langue.
+
+**Les articles** vivent dans [`lib/news.ts`](lib/news.ts). Le corps est un
+tableau de paragraphes traduits, **pas du HTML** : rien n'est injecté dans le
+document, donc aucune surface d'injection le jour où la rédaction passera par un
+outil externe.
+
 ## Ce qui est mesuré
 
 **Le serveur fait foi.** Le clic sortant est compté par
@@ -203,6 +238,9 @@ app/
   layout.tsx            # layout, préconnexions polices, Plausible optionnel
   page.tsx              # coquille responsive, feed, lecteur
   globals.css           # tokens du design system
+  about/page.tsx        # qui parle, et pourquoi — page de confiance (R-17)
+  news/page.tsx         # liste des articles
+  news/[slug]/page.tsx  # article, prérendu
   v/[id]/page.tsx       # lien profond vers une vidéo + métadonnées Open Graph
   go/[id]/route.ts      # redirection tracée des clics sortants (source de vérité)
   p/[id]/page.tsx       # fiche de repli tant que la boutique n'est pas ouverte
@@ -211,6 +249,12 @@ app/
   sitemap.ts            # une entrée par vidéo
 components/
   AppShell.tsx          # coquille applicative, partagée par / et /v/[id]
+  CoquilleEditoriale.tsx# en-tête et pied des pages /about et /news
+  HeroCarousel.tsx      # section « à la une » (3 / 2 / 1 cartes)
+  NavMenu.tsx           # menu secondaire, burger sous 1024 px
+  NewsListe.tsx         # liste d'articles + filtre par rubrique
+  NewsArticleVue.tsx    # affichage d'un article
+  PageEditoriale.tsx    # contenu de /about
   ds.tsx                # design system : Button / Chip / Badge
   icons.tsx             # icônes SVG
   ui.tsx                # recherche, onglets, filtres, langue, thème, états
@@ -219,6 +263,8 @@ components/
   HlsVideo.tsx          # <video> capable de lire du HLS (hls.js à la demande)
 lib/
   data.ts               # contenu de démo (ITEMS) — à remplacer
+  hero.ts               # cartes « à la une » (10 maximum)
+  news.ts               # articles
   site.ts               # URL publique du site (métadonnées absolues)
   i18n.ts               # dictionnaires FR/EN/中文, univers, filtres, tr()
   video.ts              # URL vidéo — public, sans secret

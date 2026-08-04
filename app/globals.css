@@ -153,3 +153,16 @@ a:hover { color: var(--color-primary-hover); text-decoration: underline; }
 @keyframes shp-rot { to { transform: rotate(360deg); } }
 @keyframes shp-kb { from { transform: scale(1.02); } to { transform: scale(1.11); } }
 @keyframes shp-pop { from { opacity: 0; transform: translate(-50%, -50%) scale(.94); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+
+/* --- Section « à la une » ------------------------------------------------ */
+/* La barre de défilement horizontale est masquée : elle apparaîtrait sous les
+   cartes et casserait la ligne de la section. Le défilement reste possible au
+   geste, à la molette, au clavier et par les flèches. */
+.shp-hero-piste::-webkit-scrollbar { display: none; }
+
+/* --- Cartes d'actualités ------------------------------------------------- */
+/* Vignette à gauche, texte à droite, à partir de 560 px seulement : en dessous,
+   l'image prendrait plus de place qu'elle n'apporte d'information. */
+@media (min-width: 560px) {
+  .shp-news-carte { grid-template-columns: 200px minmax(0, 1fr); align-items: start; }
+}

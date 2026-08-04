@@ -70,6 +70,29 @@ export const T: Record<string, I18n> = {
   videos: { fr: "vidéos", en: "videos", zh: "个视频" },
   theme: { fr: "Thème", en: "Theme", zh: "主题" },
 
+  // --- Navigation secondaire (menu, pages éditoriales) ---
+  menu: { fr: "Menu", en: "Menu", zh: "菜单" },
+  navAbout: { fr: "À propos & Contact", en: "About & Contact", zh: "关于与联系" },
+  navNews: { fr: "Actualités", en: "News", zh: "资讯" },
+  navHome: { fr: "Accueil", en: "Home", zh: "首页" },
+
+  // --- Section « à la une » ---
+  heroTitle: { fr: "À la une", en: "Featured", zh: "精选" },
+  heroPrev: { fr: "Contenus précédents", en: "Previous items", zh: "上一组" },
+  heroNext: { fr: "Contenus suivants", en: "Next items", zh: "下一组" },
+
+  // --- Actualités ---
+  newsLead: {
+    fr: "Nouveautés du catalogue, coulisses du sourcing et conseils pour vivre en Chine.",
+    en: "Catalogue news, sourcing behind the scenes, and tips for living in China.",
+    zh: "商品动态、选品幕后，以及在中国生活的经验。",
+  },
+  newsAll: { fr: "Tout", en: "All", zh: "全部" },
+  newsRead: { fr: "Lire l’article", en: "Read the post", zh: "阅读文章" },
+  newsBack: { fr: "Toutes les actualités", en: "All posts", zh: "全部文章" },
+  newsMinutes: { fr: "min de lecture", en: "min read", zh: "分钟阅读" },
+  newsEmpty: { fr: "Aucun article dans cette rubrique.", en: "No post in this section.", zh: "该分类暂无文章。" },
+
   // Page produit de repli (/p/[id]) — phase de test, tant que la boutique
   // n'est pas ouverte.
   soonTitle: { fr: "Fiche produit bientôt disponible", en: "Product page coming soon", zh: "商品页面即将上线" },

@@ -88,7 +88,6 @@ export default async function ProductFallbackPage({
             padding: "var(--space-6)",
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={item.poster}
             alt={tr(item.title, lang)}

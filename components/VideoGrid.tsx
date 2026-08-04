@@ -48,7 +48,6 @@ function Poster({
           transition: "transform 320ms cubic-bezier(.22,1,.36,1)",
         }}
       >
-        { }
         <img
           src={src}
           alt={tr(item.title, "fr")}
@@ -58,7 +57,6 @@ function Poster({
         {apercu && (
           // Superposé plutôt que substitué : si l'aperçu tarde ou échoue, la
           // vignette reste visible dessous au lieu de laisser un trou.
-           
           <img
             src={apercu}
             alt=""

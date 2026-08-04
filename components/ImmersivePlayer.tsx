@@ -105,7 +105,6 @@ function Slide({
           />
         ) : (
           <div style={{ position: "absolute", inset: 0, animation: active ? "shp-kb 14s ease-out both" : "none" }}>
-            { }
             <img src={affiche} alt={tr(item.title, lang)} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
           </div>
         )}

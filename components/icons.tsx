@@ -18,6 +18,14 @@ export const Ic = {
   globe: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18",
   sun: "M12 4V2M12 22v-2M4 12H2M22 12h-2M5.6 5.6L4.2 4.2M19.8 19.8l-1.4-1.4M18.4 5.6l1.4-1.4M4.2 19.8l1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8",
   moon: "M20 14.5A8 8 0 0 1 9.5 4a7 7 0 1 0 10.5 10.5z",
+  // Menu « burger » — n'apparaît qu'en tablette et mobile, où la barre de
+  // navigation n'a pas la place d'afficher les liens en clair.
+  menu: "M4 7h16M4 12h16M4 17h16",
+  left: "M14 6l-6 6 6 6",
+  right: "M10 6l6 6-6 6",
+  arrow: "M5 12h13M13 6l6 6-6 6",
+  mail: "M3 6h18v12H3zM3 7l9 6 9-6",
+  clock: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 7v5l3 2",
 } as const;
 
 export function Icon({

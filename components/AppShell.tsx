@@ -16,6 +16,8 @@ import {
 } from "@/lib/i18n";
 import { track } from "@/lib/analytics";
 import MasonryGrid, { SkeletonGrid } from "@/components/VideoGrid";
+import HeroCarousel from "@/components/HeroCarousel";
+import NavMenu from "@/components/NavMenu";
 import ImmersivePlayer from "@/components/ImmersivePlayer";
 import {
   BottomNav,
@@ -255,10 +257,16 @@ function MobileApp({ lang, setLang, theme, setTheme, loading, seg, setSeg, onOpe
         </div>
       );
 
+    // La section « à la une » n'apparaît que sur l'onglet Découvrir, et
+    // seulement sans filtre : au milieu de résultats de recherche, une mise en
+    // avant sans rapport avec la requête est une nuisance, pas un service.
     return (
-      <div style={{ padding: "var(--space-4)" }}>
-        <MasonryGrid items={feed.list} lang={lang} onOpen={open} cols={2} />
-        <InfiniteSentinel lang={lang} canLoad={feed.canMore} onHit={feed.more} />
+      <div style={{ padding: "var(--space-4)", display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
+        {seg === "all" && <HeroCarousel lang={lang} />}
+        <div>
+          <MasonryGrid items={feed.list} lang={lang} onOpen={open} cols={2} />
+          <InfiniteSentinel lang={lang} canLoad={feed.canMore} onHit={feed.more} />
+        </div>
       </div>
     );
   };
@@ -283,6 +291,7 @@ function MobileApp({ lang, setLang, theme, setTheme, loading, seg, setSeg, onOpe
           <div style={{ flex: 1 }} />
           <ThemeToggle theme={theme} setTheme={setTheme} />
           <LangSwitcher lang={lang} setLang={setLang} dense />
+          <NavMenu lang={lang} />
         </div>
         {tab === "search" ? (
           <SearchField lang={lang} value={query} onChange={setQuery} autoFocus />
@@ -364,6 +373,7 @@ function DesktopApp({ lang, setLang, theme, setTheme, loading, seg, setSeg, onOp
             <SearchField lang={lang} value={query} onChange={setQuery} />
           </div>
           <div style={{ flex: 1 }} />
+          <NavMenu lang={lang} />
           <ThemeToggle theme={theme} setTheme={setTheme} />
           <LangSwitcher lang={lang} setLang={setLang} />
         </div>
@@ -380,6 +390,10 @@ function DesktopApp({ lang, setLang, theme, setTheme, loading, seg, setSeg, onOp
           gap: "var(--space-5)",
         }}
       >
+        {/* « À la une » n'apparaît qu'en navigation libre : pendant une
+            recherche ou un filtrage, une mise en avant hors sujet parasite la
+            lecture des résultats. */}
+        {!searching && seg === "all" && !loading && <HeroCarousel lang={lang} />}
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap" }}>
           <span style={{ font: "var(--type-label)", color: "var(--text-strong)" }}>{tr(T.filtersLabel, lang)}</span>
           <FilterChips lang={lang} active={filters} toggle={toggle} />
