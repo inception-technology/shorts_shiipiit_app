@@ -23,7 +23,8 @@ Build de production : `npm run build && npm start`.
 |---|---|
 | `npm run dev` | serveur de développement |
 | `npm run build` / `npm start` | build et service de production |
-| `npm run lint` | ESLint |
+| `npm run lint` | ESLint, **zéro avertissement toléré** |
+| `npm run verif:env` | vérifie que toute variable lue par le code est documentée |
 | `npm run verif:bunny` | **vérifie la configuration vidéo de bout en bout** (voir plus bas) |
 
 ## Fonctionnalités
@@ -227,6 +228,9 @@ lib/
   bots.ts               # robots et prévisualisations de lien
 scripts/
   verifier-bunny.mjs    # vérification de la configuration vidéo
+  verifier-env.mjs      # variables lues vs documentées
+.github/workflows/
+  ci.yml                # types, lint, variables, build
 ```
 
 ## Déploiement
@@ -245,6 +249,31 @@ déploiement de production.
 Les URL de prévisualisation changent à chaque push et ne peuvent pas être
 listées à l'avance chez Bunny — la vidéo n'y fonctionnera pas sans ajout
 ponctuel.
+
+## Intégration continue
+
+`.github/workflows/ci.yml` rejoue quatre contrôles sur chaque poussée et chaque
+*pull request* vers `main`, du moins cher au plus cher :
+
+| Contrôle | Ce qu'il attrape |
+|---|---|
+| `tsc --noEmit` | ruptures de contrat entre modules |
+| `eslint . --max-warnings=0` | règles Next.js et React Hooks |
+| `verif:env` | variable lue par le code mais non documentée |
+| `next build` | **fuite d'un secret côté client** — `server-only` fait échouer la compilation si un composant client importe `lib/video-admin.ts` |
+
+Le build est le seul contrôle qui vérifie la frontière client/serveur. C'est
+pour cela qu'il reste dans la CI malgré son coût.
+
+⚠️ Ce projet est conçu pour **se dégrader en silence** quand une variable
+manque : c'est un bon choix — mieux vaut un site qui tourne qu'un site qui
+plante — mais il rend les régressions invisibles. La CI est le seul endroit où
+une erreur peut encore faire du bruit.
+
+## Conventions
+
+Voir [`CLAUDE.md`](CLAUDE.md) : commentaires en français, ce qu'un commentaire
+doit contenir, frontière client/serveur, gestion de l'état React.
 
 ## Roadmap
 

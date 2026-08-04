@@ -6,8 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "verif:bunny": "node scripts/verifier-bunny.mjs"
+    "lint": "eslint . --max-warnings=0",
+    "verif:bunny": "node scripts/verifier-bunny.mjs",
+    "verif:env": "node scripts/verifier-env.mjs"
   },
   "dependencies": {
     "hls.js": "^1.6.16",
@@ -20,6 +21,8 @@
     "@types/node": "20.14.10",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.0",
     "typescript": "5.5.4"
   },
   "overrides": {

@@ -137,7 +137,7 @@ export function SearchField({
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => {
           setF(true);
-          onFocus && onFocus();
+          onFocus?.();
         }}
         onBlur={() => setF(false)}
         placeholder={tr(T[placeholderKey], lang)}

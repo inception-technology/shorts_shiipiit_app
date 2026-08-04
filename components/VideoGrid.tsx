@@ -16,16 +16,26 @@ import { poster as posterUrl, sources } from "@/lib/video";
  * de `videoId`, la vignette de démonstration continue de s'afficher — la
  * bascule vers les vraies vidéos se fait donnée par donnée, sans branche de code.
  */
-function Poster({ item, preview }: { item: VideoItem; preview: boolean }) {
-  // L'aperçu animé n'est demandé qu'au survol : le charger d'emblée sur toute
-  // la grille multiplierait la bande passante par le nombre de vignettes
-  // visibles, pour un média que l'immense majorité des visiteurs ne verra pas.
-  const [apercuDemande, setApercuDemande] = useState(false);
-  useEffect(() => {
-    if (preview) setApercuDemande(true);
-  }, [preview]);
-
+function Poster({
+  item,
+  preview,
+  apercuDemande,
+}: {
+  item: VideoItem;
+  preview: boolean;
+  /**
+   * Vrai dès le premier survol, et pour toujours ensuite. Le verrou est tenu
+   * par la carte, dans son gestionnaire de survol, et non par un effet ici :
+   * déclencher un changement d'état depuis un effet provoque un rendu en
+   * cascade — et React le signale désormais comme une erreur.
+   */
+  apercuDemande: boolean;
+}) {
   const src = posterUrl(item.videoId, item.poster);
+  // L'aperçu animé n'est chargé qu'après un premier survol : le charger d'emblée
+  // sur toute la grille multiplierait la bande passante par le nombre de
+  // vignettes visibles, pour un média que l'immense majorité des visiteurs ne
+  // verra jamais.
   const apercu = apercuDemande ? sources(item.videoId)?.preview : undefined;
 
   return (
@@ -38,7 +48,7 @@ function Poster({ item, preview }: { item: VideoItem; preview: boolean }) {
           transition: "transform 320ms cubic-bezier(.22,1,.36,1)",
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+        { }
         <img
           src={src}
           alt={tr(item.title, "fr")}
@@ -48,7 +58,7 @@ function Poster({ item, preview }: { item: VideoItem; preview: boolean }) {
         {apercu && (
           // Superposé plutôt que substitué : si l'aperçu tarde ou échoue, la
           // vignette reste visible dessous au lieu de laisser un trou.
-          // eslint-disable-next-line @next/next/no-img-element
+           
           <img
             src={apercu}
             alt=""
@@ -82,16 +92,23 @@ export function VideoCard({
   span?: number;
 }) {
   const [hov, setHov] = useState(false);
+  // Verrou : une fois l'aperçu demandé, il le reste — sortir puis revenir sur la
+  // vignette ne doit pas retélécharger le média.
+  const [apercuDemande, setApercuDemande] = useState(false);
+  const survol = (actif: boolean) => {
+    setHov(actif);
+    if (actif) setApercuDemande(true);
+  };
   const ref = useRef<HTMLButtonElement>(null);
   return (
     <button
       ref={ref}
       type="button"
       aria-label={tr(item.title, lang)}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      onFocus={() => setHov(true)}
-      onBlur={() => setHov(false)}
+      onMouseEnter={() => survol(true)}
+      onMouseLeave={() => survol(false)}
+      onFocus={() => survol(true)}
+      onBlur={() => survol(false)}
       onClick={() => onOpen && onOpen(item, ref.current)}
       style={{
         gridColumn: "span " + span,
@@ -112,7 +129,7 @@ export function VideoCard({
         transition: "box-shadow var(--transition-base)",
       }}
     >
-      <Poster item={item} preview={hov} />
+      <Poster item={item} preview={hov} apercuDemande={apercuDemande} />
       <div
         style={{
           position: "absolute",

@@ -105,7 +105,7 @@ function Slide({
           />
         ) : (
           <div style={{ position: "absolute", inset: 0, animation: active ? "shp-kb 14s ease-out both" : "none" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+            { }
             <img src={affiche} alt={tr(item.title, lang)} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
           </div>
         )}
@@ -210,8 +210,15 @@ export default function ImmersivePlayer({
   }, []);
 
   // Progression segmentée (~9 s par vidéo).
-  useEffect(() => {
+  // Le compteur est remis à zéro **pendant le rendu**, en comparant l'indice
+  // courant au précédent, plutôt que dans l'effet : appeler `setTick(0)` depuis
+  // un effet déclenche un rendu en cascade, que React signale comme une erreur.
+  const [indicePrecedent, setIndicePrecedent] = useState(index);
+  if (indicePrecedent !== index) {
+    setIndicePrecedent(index);
     setTick(0);
+  }
+  useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 100);
     return () => clearInterval(id);
   }, [index]);

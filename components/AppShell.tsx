@@ -57,9 +57,15 @@ interface FeedArgs {
 function useFeed({ seg, query, filters, loading }: FeedArgs) {
   const [pages, setPages] = useState(1);
   const key = seg + "|" + query + "|" + filters.join(",") + "|" + loading;
-  useEffect(() => {
+  // Changer d'univers, de recherche ou de filtre repart de la première page.
+  // La remise à zéro se fait **pendant le rendu**, comparée à la clé précédente,
+  // et non dans un effet : un effet aurait laissé afficher un rendu avec
+  // l'ancienne pagination avant de corriger.
+  const [cle, setCle] = useState(key);
+  if (cle !== key) {
+    setCle(key);
     setPages(1);
-  }, [key]);
+  }
 
   const base = useMemo(
     () =>
@@ -393,24 +399,22 @@ export default function AppShell({ videoInitial }: { videoInitial?: string }) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [seg, setSegState] = useState<SegmentTab>("all");
   const [loading, setLoading] = useState(true);
-  const [player, setPlayer] = useState<{ list: VideoItem[]; index: number } | null>(null);
+  // Lien profond : /v/<id> ouvre directement la vidéo partagée. L'état est
+  // calculé **au premier rendu** plutôt que dans un effet — ouvrir le lecteur
+  // depuis un effet ferait afficher la grille une fraction de seconde avant de
+  // basculer, et React signale désormais ce changement d'état en cascade comme
+  // une erreur.
+  const [player, setPlayer] = useState<{ list: VideoItem[]; index: number } | null>(() => {
+    if (!videoInitial) return null;
+    const index = ITEMS.findIndex((v) => v.id === videoInitial);
+    return index < 0 ? null : { list: ITEMS, index };
+  });
 
   // Vue d'ensemble : page_view + court squelette d'amorçage (perçu comme un vrai chargement).
   useEffect(() => {
     track("page_view", { path: videoInitial ? `/v/${videoInitial}` : "/" });
     const to = setTimeout(() => setLoading(false), 550);
     return () => clearTimeout(to);
-  }, [videoInitial]);
-
-  // Lien profond : /v/<id> ouvre directement la vidéo partagée.
-  // Sans cela, un lien partagé sur un réseau social ramène sur la grille et le
-  // visiteur doit retrouver lui-même la vidéo qui l'a fait cliquer — c'est là
-  // que se perd l'essentiel du trafic social.
-  useEffect(() => {
-    if (!videoInitial) return;
-    const index = ITEMS.findIndex((v) => v.id === videoInitial);
-    if (index < 0) return;
-    setPlayer({ list: ITEMS, index });
   }, [videoInitial]);
 
   // Applique le thème au document (fond de page cohérent hors conteneur).
